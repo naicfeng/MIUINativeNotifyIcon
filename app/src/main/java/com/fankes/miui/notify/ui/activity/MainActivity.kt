@@ -69,13 +69,13 @@ class MainActivity : BaseActivity<ActivityMainBinding>() {
         binding.mainTextVersion.text = "模块版本：$moduleVersion $pendingFlag"
         binding.mainTextMiuiVersion.text = "系统版本：$miuiFullVersion"
         /** 检查更新 */
-        GithubReleaseTool.checkingForUpdate(context = this, moduleVersion) { version, function ->
-            binding.mainTextReleaseVersion.apply {
-                text = "点击更新 $version"
-                isVisible = true
-                setOnClickListener { function() }
-            }
-        }
+        // GithubReleaseTool.checkingForUpdate(context = this, moduleVersion) { version, function ->
+        //     binding.mainTextReleaseVersion.apply {
+        //         text = "点击更新 $version"
+        //         isVisible = true
+        //         setOnClickListener { function() }
+        //     }
+        // }
         when {
             /** 判断是否为 MIUI 系统 */
             isNotMIUI ->
