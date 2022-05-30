@@ -43,7 +43,7 @@ import com.fankes.miui.notify.ui.activity.base.BaseActivity
 import com.fankes.miui.notify.utils.factory.*
 import com.fankes.miui.notify.utils.tool.IconRuleManagerTool
 import com.fankes.miui.notify.utils.tool.SystemUITool
-import com.highcapable.yukihookapi.hook.factory.isXposedModuleActive
+import com.highcapable.yukihookapi.YukiHookAPI
 
 class ConfigureActivity : BaseActivity<ActivityConfigBinding>() {
 
@@ -61,7 +61,7 @@ class ConfigureActivity : BaseActivity<ActivityConfigBinding>() {
 
     override fun onCreate() {
         /** 检查激活状态 */
-        if (isXposedModuleActive.not()) {
+        if (YukiHookAPI.Status.isXposedModuleActive.not()) {
             showDialog {
                 title = "模块没有激活"
                 msg = "模块没有激活，你无法使用这里的功能，请先激活模块。"
@@ -154,8 +154,19 @@ class ConfigureActivity : BaseActivity<ActivityConfigBinding>() {
                         holder.adpAppAllSwitch.isChecked = isAppNotifyHookAllOf(it)
                         holder.adpAppAllSwitch.setOnCheckedChangeListener { btn, b ->
                             if (btn.isPressed.not()) return@setOnCheckedChangeListener
-                            putAppNotifyHookAllOf(it, b)
-                            SystemUITool.refreshSystemUI(context = this@ConfigureActivity)
+                            fun saveState() {
+                                putAppNotifyHookAllOf(it, b)
+                                SystemUITool.refreshSystemUI(context = this@ConfigureActivity)
+                            }
+                            if (b) showDialog {
+                                title = "全部替换"
+                                msg = "此功能仅针对严重不遵守规范的 APP 通知图标才需要开启，例如：APP 推送通知后无法识别出现的黑白块图标。\n\n" +
+                                        "此功能在一般情况下请保持关闭并跟随在线规则的配置，并不要随意改变此配置，" +
+                                        "开启后 APP 的通知图标可能会被规则破坏，你确定还要开启吗？"
+                                confirmButton { saveState() }
+                                cancelButton { btn.isChecked = btn.isChecked.not() }
+                                noCancelable()
+                            } else saveState()
                         }
                     }
                     return cView!!
@@ -176,7 +187,13 @@ class ConfigureActivity : BaseActivity<ActivityConfigBinding>() {
         }
         /** 设置点击事件 */
         binding.configCbrButton.setOnClickListener {
-            openBrowser(url = "https://github.com/fankes/AndroidNotifyIconAdapt/blob/main/CONTRIBUTING.md")
+            showDialog {
+                title = "感谢你的贡献"
+                msg = "通知图标优化名单需要大家的共同维护才能得以完善，请选择你的贡献方式。"
+                confirmButton(text = "贡献规则") { openBrowser(url = "https://github.com/fankes/AndroidNotifyIconAdapt/blob/main/CONTRIBUTING.md") }
+                cancelButton(text = "请求适配") { openBrowser(url = "https://github.com/fankes/MIUINativeNotifyIcon/issues/new/choose") }
+                neutralButton(text = "暂时不用")
+            }
         }
         /** 装载数据 */
         mockLocalData()

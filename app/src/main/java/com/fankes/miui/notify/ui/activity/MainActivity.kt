@@ -28,8 +28,8 @@ import android.content.ComponentName
 import android.content.pm.PackageManager
 import androidx.core.view.isGone
 import androidx.core.view.isVisible
+import com.fankes.miui.notify.BuildConfig
 import com.fankes.miui.notify.R
-import com.fankes.miui.notify.const.Const
 import com.fankes.miui.notify.data.DataConst
 import com.fankes.miui.notify.databinding.ActivityMainBinding
 import com.fankes.miui.notify.databinding.DiaStatusIconCountBinding
@@ -38,9 +38,9 @@ import com.fankes.miui.notify.ui.activity.base.BaseActivity
 import com.fankes.miui.notify.utils.factory.*
 import com.fankes.miui.notify.utils.tool.GithubReleaseTool
 import com.fankes.miui.notify.utils.tool.SystemUITool
-import com.highcapable.yukihookapi.hook.factory.isXposedModuleActive
+import com.fankes.miui.notify.utils.tool.YukiPromoteTool
+import com.highcapable.yukihookapi.YukiHookAPI
 import com.highcapable.yukihookapi.hook.factory.modulePrefs
-import com.highcapable.yukihookapi.hook.xposed.YukiHookModuleStatus
 
 class MainActivity : BaseActivity<ActivityMainBinding>() {
 
@@ -50,7 +50,7 @@ class MainActivity : BaseActivity<ActivityMainBinding>() {
         internal var isActivityLive = false
 
         /** 模块版本 */
-        private const val moduleVersion = Const.MODULE_VERSION_NAME
+        private const val moduleVersion = BuildConfig.VERSION_NAME
 
         /** 预发布的版本标识 */
         private const val pendingFlag = ""
@@ -105,7 +105,7 @@ class MainActivity : BaseActivity<ActivityMainBinding>() {
                     noCancelable()
                 }
             /** 判断是否 Hook */
-            isXposedModuleActive -> {
+            YukiHookAPI.Status.isXposedModuleActive -> {
                 if (IconPackParams(context = this).iconDatas.isEmpty() && modulePrefs.get(DataConst.ENABLE_NOTIFY_ICON_FIX))
                     showDialog {
                         title = "配置通知图标优化名单"
@@ -123,6 +123,8 @@ class MainActivity : BaseActivity<ActivityMainBinding>() {
                         cancelButton()
                         noCancelable()
                     }
+                /** 推广、恰饭 */
+                YukiPromoteTool.promote(context = this)
             }
             else ->
                 showDialog {
@@ -141,6 +143,7 @@ class MainActivity : BaseActivity<ActivityMainBinding>() {
         binding.statusIconCountItem.isVisible = modulePrefs.get(DataConst.ENABLE_MODULE)
         binding.notifyIconConfigItem.isVisible = modulePrefs.get(DataConst.ENABLE_MODULE)
         binding.notifyIconFixButton.isVisible = modulePrefs.get(DataConst.ENABLE_NOTIFY_ICON_FIX)
+        binding.notifyIconForceAppIconItem.isVisible = modulePrefs.get(DataConst.ENABLE_NOTIFY_ICON_FIX)
         binding.notifyIconFixNotifyItem.isVisible = modulePrefs.get(DataConst.ENABLE_NOTIFY_ICON_FIX)
         binding.notifyIconAutoSyncItem.isVisible = modulePrefs.get(DataConst.ENABLE_NOTIFY_ICON_FIX)
         binding.statusIconCountSwitch.isChecked = modulePrefs.get(DataConst.ENABLE_HOOK_STATUS_ICON_COUNT)
@@ -151,6 +154,7 @@ class MainActivity : BaseActivity<ActivityMainBinding>() {
         binding.hideIconInLauncherSwitch.isChecked = modulePrefs.get(DataConst.ENABLE_HIDE_ICON)
         binding.colorIconCompatSwitch.isChecked = modulePrefs.get(DataConst.ENABLE_COLOR_ICON_COMPAT)
         binding.notifyIconFixSwitch.isChecked = modulePrefs.get(DataConst.ENABLE_NOTIFY_ICON_FIX)
+        binding.notifyIconForceAppIconSwitch.isChecked = modulePrefs.get(DataConst.ENABLE_NOTIFY_ICON_FORCE_APP_ICON)
         binding.notifyIconFixNotifySwitch.isChecked = modulePrefs.get(DataConst.ENABLE_NOTIFY_ICON_FIX_NOTIFY)
         binding.notifyIconAutoSyncSwitch.isChecked = modulePrefs.get(DataConst.ENABLE_NOTIFY_ICON_FIX_AUTO)
         binding.statusIconCountText.text = statusBarIconCount.toString()
@@ -193,9 +197,26 @@ class MainActivity : BaseActivity<ActivityMainBinding>() {
             if (btn.isPressed.not()) return@setOnCheckedChangeListener
             modulePrefs.put(DataConst.ENABLE_NOTIFY_ICON_FIX, b)
             binding.notifyIconFixButton.isVisible = b
+            binding.notifyIconForceAppIconItem.isVisible = b
             binding.notifyIconFixNotifyItem.isVisible = b
             binding.notifyIconAutoSyncItem.isVisible = b
             SystemUITool.refreshSystemUI(context = this)
+        }
+        binding.notifyIconForceAppIconSwitch.setOnCheckedChangeListener { btn, b ->
+            if (btn.isPressed.not()) return@setOnCheckedChangeListener
+            fun saveState() {
+                modulePrefs.put(DataConst.ENABLE_NOTIFY_ICON_FORCE_APP_ICON, b)
+                SystemUITool.refreshSystemUI(context = this)
+            }
+            if (b) showDialog {
+                title = "破坏性功能警告"
+                msg = "开启这个功能后，任何通知栏中的通知图标都会被强制替换为当前推送通知的 APP 的图标，" +
+                        "某些系统级别的 APP 通知图标可能会显示异常或发生图标丢失。\n\n" +
+                        "此功能仅面向一些追求图标美观度的用户，我们不推荐开启这个功能，且发生任何 BUG 都不会去修复，仍然继续开启吗？"
+                confirmButton { saveState() }
+                cancelButton { btn.isChecked = btn.isChecked.not() }
+                noCancelable()
+            } else saveState()
         }
         binding.notifyIconFixNotifySwitch.setOnCheckedChangeListener { btn, b ->
             if (btn.isPressed.not()) return@setOnCheckedChangeListener
@@ -274,36 +295,36 @@ class MainActivity : BaseActivity<ActivityMainBinding>() {
     private fun refreshModuleStatus() {
         binding.mainLinStatus.setBackgroundResource(
             when {
-                isXposedModuleActive && (isModuleRegular.not() || isModuleValied.not()) -> R.drawable.bg_yellow_round
-                isXposedModuleActive -> R.drawable.bg_green_round
+                YukiHookAPI.Status.isXposedModuleActive && (isModuleRegular.not() || isModuleValied.not()) -> R.drawable.bg_yellow_round
+                YukiHookAPI.Status.isXposedModuleActive -> R.drawable.bg_green_round
                 else -> R.drawable.bg_dark_round
             }
         )
         binding.mainImgStatus.setImageResource(
             when {
-                isXposedModuleActive -> R.mipmap.ic_success
+                YukiHookAPI.Status.isXposedModuleActive -> R.mipmap.ic_success
                 else -> R.mipmap.ic_warn
             }
         )
         binding.mainTextStatus.text =
             when {
-                isXposedModuleActive && isModuleRegular.not() && modulePrefs.get(DataConst.ENABLE_MODULE).not() -> "模块已停用"
-                isXposedModuleActive && isModuleRegular.not() -> "模块已激活，请重启系统界面"
-                isXposedModuleActive && isModuleValied.not() -> "模块已更新，请重启系统界面"
-                isXposedModuleActive -> "模块已激活"
+                YukiHookAPI.Status.isXposedModuleActive && isModuleRegular.not() && modulePrefs.get(DataConst.ENABLE_MODULE).not() -> "模块已停用"
+                YukiHookAPI.Status.isXposedModuleActive && isModuleRegular.not() -> "模块已激活，请重启系统界面"
+                YukiHookAPI.Status.isXposedModuleActive && isModuleValied.not() -> "模块已更新，请重启系统界面"
+                YukiHookAPI.Status.isXposedModuleActive -> "模块已激活"
                 else -> "模块未激活"
             }
-        binding.mainTextApiWay.isVisible = isXposedModuleActive
-        binding.mainTextApiWay.text = "Activated by ${YukiHookModuleStatus.executorName} API ${YukiHookModuleStatus.executorVersion}"
+        binding.mainTextApiWay.isVisible = YukiHookAPI.Status.isXposedModuleActive
+        binding.mainTextApiWay.text = "Activated by ${YukiHookAPI.Status.executorName} API ${YukiHookAPI.Status.executorVersion}"
     }
 
     override fun onResume() {
         super.onResume()
         /** 刷新模块状态 */
         refreshModuleStatus()
-        /** 发送广播检查模块激活状态 */
-        SystemUITool.checkingActivated(context = this) { isRegular, isValied ->
-            isModuleRegular = isRegular
+        /** 检查模块激活状态 */
+        SystemUITool.checkingActivated(context = this) { isValied ->
+            isModuleRegular = true
             isModuleValied = isValied
             refreshModuleStatus()
         }
