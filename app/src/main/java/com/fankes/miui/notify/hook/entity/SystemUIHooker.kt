@@ -438,6 +438,9 @@ object SystemUIHooker : YukiBaseHooker() {
             /** 旧版风格反色 */
             val oldStyle = if (context.isNotSystemInDarkMode) 0xFF707070.toInt() else Color.WHITE
 
+            /** 通知图标边框圆角大小 */
+            val iconCorner = prefs.get(DataConst.NOTIFY_ICON_CORNER)
+
             /** 通知图标原始颜色 */
             val iconColor = notifyInstance.notification.color
 
@@ -474,7 +477,7 @@ object SystemUIHooker : YukiBaseHooker() {
             /** 处理自定义通知图标优化 */
             when {
                 prefs.get(DataConst.ENABLE_NOTIFY_ICON_FORCE_APP_ICON) && isEnableHookColorNotifyIcon(isHooking = false) ->
-                    setDefaultNotifyIcon(context.findAppIcon(notifyInstance.compatOpPkgName))
+                    setDefaultNotifyIcon(context.findAppIcon(notifyInstance.nfPkgName))
                 customIcon != null -> iconImageView.apply {
                     /** 设置不要裁切到边界 */
                     clipToOutline = false
@@ -485,7 +488,8 @@ object SystemUIHooker : YukiBaseHooker() {
                     /** Android 12 设置图标外圈颜色 */
                     if (isUseAndroid12Style && customIconColor != 0)
                         background = DrawableBuilder()
-                            .rounded()
+                            .rectangle()
+                            .cornerRadius(iconCorner.dp(context))
                             .solidColor(if (context.isSystemInDarkMode) customIconColor.brighter else customIconColor)
                             .build()
                     /** 设置原生的背景边距 */
@@ -504,7 +508,8 @@ object SystemUIHooker : YukiBaseHooker() {
                         (if (hasIconColor) iconColor else context.systemAccentColor).also {
                             if (isUseAndroid12Style)
                                 background = DrawableBuilder()
-                                    .rounded()
+                                    .rectangle()
+                                    .cornerRadius(iconCorner.dp(context))
                                     .solidColor(if (context.isSystemInDarkMode) it.brighter else it)
                                     .build()
                         }

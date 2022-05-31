@@ -26,6 +26,7 @@ package com.fankes.miui.notify.ui.activity
 
 import android.content.ComponentName
 import android.content.pm.PackageManager
+import android.widget.SeekBar
 import androidx.core.view.isGone
 import androidx.core.view.isVisible
 import com.fankes.miui.notify.BuildConfig
@@ -123,6 +124,14 @@ class MainActivity : BaseActivity<ActivityMainBinding>() {
                         cancelButton()
                         noCancelable()
                     }
+                if (isLowerAndroidR && modulePrefs.get(DataConst.IGNORED_ANDROID_VERSION_TO_LOW).not())
+                    showDialog {
+                        title = "Android 版本过低"
+                        msg = "你当前使用的 Android 版本过低，模块的部分功能可能会发生问题，" +
+                                "由于设备有限，无法逐一调试，若有好的建议可向我们贡献代码提交适配请求，建议在 Android 11 及以上版本中使用效果最佳。"
+                        confirmButton(text = "我知道了") { modulePrefs.put(DataConst.IGNORED_ANDROID_VERSION_TO_LOW, value = true) }
+                        noCancelable()
+                    }
                 /** 推广、恰饭 */
                 YukiPromoteTool.promote(context = this)
             }
@@ -143,6 +152,8 @@ class MainActivity : BaseActivity<ActivityMainBinding>() {
         binding.statusIconCountItem.isVisible = modulePrefs.get(DataConst.ENABLE_MODULE)
         binding.notifyIconConfigItem.isVisible = modulePrefs.get(DataConst.ENABLE_MODULE)
         binding.notifyIconFixButton.isVisible = modulePrefs.get(DataConst.ENABLE_NOTIFY_ICON_FIX)
+        binding.notifyIconCustomCornerItem.isVisible = modulePrefs.get(DataConst.ENABLE_NOTIFY_ICON_FIX) &&
+                modulePrefs.get(DataConst.ENABLE_NOTIFY_ICON_FORCE_APP_ICON).not()
         binding.notifyIconForceAppIconItem.isVisible = modulePrefs.get(DataConst.ENABLE_NOTIFY_ICON_FIX)
         binding.notifyIconFixNotifyItem.isVisible = modulePrefs.get(DataConst.ENABLE_NOTIFY_ICON_FIX)
         binding.notifyIconAutoSyncItem.isVisible = modulePrefs.get(DataConst.ENABLE_NOTIFY_ICON_FIX)
@@ -157,6 +168,8 @@ class MainActivity : BaseActivity<ActivityMainBinding>() {
         binding.notifyIconForceAppIconSwitch.isChecked = modulePrefs.get(DataConst.ENABLE_NOTIFY_ICON_FORCE_APP_ICON)
         binding.notifyIconFixNotifySwitch.isChecked = modulePrefs.get(DataConst.ENABLE_NOTIFY_ICON_FIX_NOTIFY)
         binding.notifyIconAutoSyncSwitch.isChecked = modulePrefs.get(DataConst.ENABLE_NOTIFY_ICON_FIX_AUTO)
+        binding.notifyIconCustomCornerSeekbar.progress = modulePrefs.get(DataConst.NOTIFY_ICON_CORNER)
+        binding.notifyIconCustomCornerText.text = "${modulePrefs.get(DataConst.NOTIFY_ICON_CORNER)} dp"
         binding.statusIconCountText.text = statusBarIconCount.toString()
         binding.notifyIconAutoSyncText.text = notifyIconAutoSyncTime
         binding.moduleEnableSwitch.setOnCheckedChangeListener { btn, b ->
@@ -197,6 +210,7 @@ class MainActivity : BaseActivity<ActivityMainBinding>() {
             if (btn.isPressed.not()) return@setOnCheckedChangeListener
             modulePrefs.put(DataConst.ENABLE_NOTIFY_ICON_FIX, b)
             binding.notifyIconFixButton.isVisible = b
+            binding.notifyIconCustomCornerItem.isVisible = b && modulePrefs.get(DataConst.ENABLE_NOTIFY_ICON_FORCE_APP_ICON).not()
             binding.notifyIconForceAppIconItem.isVisible = b
             binding.notifyIconFixNotifyItem.isVisible = b
             binding.notifyIconAutoSyncItem.isVisible = b
@@ -205,6 +219,7 @@ class MainActivity : BaseActivity<ActivityMainBinding>() {
         binding.notifyIconForceAppIconSwitch.setOnCheckedChangeListener { btn, b ->
             if (btn.isPressed.not()) return@setOnCheckedChangeListener
             fun saveState() {
+                binding.notifyIconCustomCornerItem.isVisible = b.not()
                 modulePrefs.put(DataConst.ENABLE_NOTIFY_ICON_FORCE_APP_ICON, b)
                 SystemUITool.refreshSystemUI(context = this)
             }
@@ -229,6 +244,18 @@ class MainActivity : BaseActivity<ActivityMainBinding>() {
             binding.notifyIconAutoSyncChildItem.isVisible = b
             SystemUITool.refreshSystemUI(context = this, isRefreshCacheOnly = true)
         }
+        binding.notifyIconCustomCornerSeekbar.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
+            override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {
+                binding.notifyIconCustomCornerText.text = "$progress dp"
+            }
+
+            override fun onStopTrackingTouch(seekBar: SeekBar) {
+                modulePrefs.put(DataConst.NOTIFY_ICON_CORNER, seekBar.progress)
+                SystemUITool.refreshSystemUI(context = this@MainActivity)
+            }
+
+            override fun onStartTrackingTouch(seekBar: SeekBar?) {}
+        })
         /** 通知图标优化名单按钮点击事件 */
         binding.notifyIconFixButton.setOnClickListener { navigate<ConfigureActivity>() }
         /** 设置警告 */
