@@ -28,6 +28,18 @@ Fix the native notification bar icon function abandoned by the MIUI development 
 
 - 请始终保持最新版本的 LSPosed，旧版本可能会出现 Hook 不生效的问题，若最新版本依然不生效请在作用域中长按“系统界面”(“系统 UI”)选择重新优化
 
+## 特殊问题说明
+
+无法保证在全部支持的系统版本中适配经典风格的通知中的小图标 (MIUI 样式通知栏)。
+
+此功能在部分 Android 11/12 稳定版或 DEV 版本机型可能会发生 BUG 导致不生效，暂时无法排查和修复，属于已知问题，经测试 **长按“系统界面”(“系统 UI”)选择重新优化** 也不能修复。
+
+经过我一晚上的调试，无论使用何种方式，都不能修复此问题，暂时无解，无法排查是 **LSPosed** 的问题还是 **MIUI** 的问题 (**MIUI** 问题的可能性大一些)。
+
+另外，此功能无法在 Android 10 机型工作，将不做修复。
+
+**临时解决方案：** 若想使用原生风格图标建议在 **设置 > 通知与控制中心 > 通知显示设置** 中调整为 **原生样式** 。
+
 ## 请勿用于非法用途
 
 - 本模块完全开源免费，如果好用你可以打赏支持开发，但是请不要用于非法用途。
@@ -55,6 +67,10 @@ Fix the native notification bar icon function abandoned by the MIUI development 
 当然，国内的手机生态除了 `MIPUSH` 的营销通知就是社交软件的通知，可能大部分人都不会在意这件事情。
 
 但是，这个模块就是为了修复被 MIUI 开发组忽略的图标问题才诞生的，并完美地给 MIUI 修复了黑白块图标的问题。
+
+## 效果展示
+
+<img src="https://github.com/fankes/MIUINativeNotifyIcon/blob/master/images/style.png"/>
 
 ## 探索历程
 
